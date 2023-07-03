@@ -6,7 +6,6 @@ import ar.edu.utn.frc.tup.lciii.dtos.round.NewMatchRoundRequestDTO;
 import ar.edu.utn.frc.tup.lciii.dtos.round.RoundPlayDTO;
 import ar.edu.utn.frc.tup.lciii.dtos.round.RoundResponseDTO;
 import ar.edu.utn.frc.tup.lciii.entities.MatchEntity;
-import ar.edu.utn.frc.tup.lciii.entities.PlayerEntity;
 import ar.edu.utn.frc.tup.lciii.models.*;
 import ar.edu.utn.frc.tup.lciii.repositories.jpa.MatchJpaRepository;
 import ar.edu.utn.frc.tup.lciii.services.DeckService;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.swing.text.html.Option;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -49,17 +47,14 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     public List<MatchResponseDTO> getMatchesByPlayer(Long playerId) {
-        // TO DO: Completar el metodo de manera tal que retorne todas las partidas
+        // TODO: Completar el metodo de manera tal que retorne todas las partidas
         //  en las que haya participado un jugador y que ya hayan finalizado.
         //  Si el jugador no tiene partidas finalizadas debe retornar una exepción del tipo
         //  EntityNotFoundException con el mensaje "The player do not have matches finished"
         List<MatchResponseDTO> matches = new ArrayList<>();
         Optional<List<MatchEntity>> matchEntityList = matchJpaRepository.getAllByPlayerIdAndMatchStatus(playerId, MatchStatus.FINISH);
         if(matchEntityList.isPresent()) {
-            // TO DO: Recorrer la lista y mapear el objeto
-            for (MatchEntity matchEntity: matchEntityList.get()) {
-                matches.add(modelMapper.map(matchEntity,MatchResponseDTO.class));
-            }
+            // TODO: Recorrer la lista y mapear el objeto
             return matches;
         } else {
             throw new EntityNotFoundException("The player do not have matches finished");
@@ -101,7 +96,7 @@ public class MatchServiceImpl implements MatchService {
     @Transactional
     @Override
     public RoundResponseDTO createRoundMatch(Long matchId, NewMatchRoundRequestDTO newMatchRoundRequestDTO) {
-        // TO DO: Implementar el metodo de manera tal que haga las siguiestes acciones y validaciones:
+        // TODO: Implementar el metodo de manera tal que haga las siguiestes acciones y validaciones:
         //  1. Validar que el matchId exista en la DB, si no exite retornar una exepción del
         //  tipo EntityNotFoundException con el mensaje "The match id {matchId} not found"
         //  2. Validar que el match le pertenezca al player recibido por parametro, sino retornar
@@ -120,13 +115,8 @@ public class MatchServiceImpl implements MatchService {
 
         // 1
         Match match = this.getMatchById(matchId);
-        if (match.getId() == null){
-            throw new EntityNotFoundException("The match id {matchId} not found");
-        }
+
         // 2
-        if (match.getPlayer().getId() != newMatchRoundRequestDTO.getPlayerId()){
-            throw new IllegalArgumentException("The match id {matchId} does not belong to player {playerId}");
-        }
 
         // 3
         List<Round> roundsUnfinished = roundService.getUnfinishedRounds(matchId);
@@ -135,50 +125,24 @@ public class MatchServiceImpl implements MatchService {
         }
 
         // 4
-        Player player = playerService.getPlayerById(newMatchRoundRequestDTO.getPlayerId());
-
-
-        if (Integer.parseInt(player.getBalanceChips().toString())  < 20){
-            throw new ResponseStatusException(HttpStatusCode.valueOf(403), "Insufficient balance");
-        }
 
         // 5 ------INICIO--------
         Round round = new Round();
         round.setMatchId(matchId);
         // 5.a
-        Deck deck = deckService.createDeck();
-        deckService.shuffleDeck(deck);
 
         // 5.b
-        //  5.b. Asignar la primera carta al jugador y la segunda a la app
-
-        List<Card> deckListPlayer = new ArrayList<>();
-        deckListPlayer.add(deck.getCards().get(0));
-        round.setPlayerCards(deckListPlayer);
-
-        List<Card> deckListApp = new ArrayList<>();
-        deckListApp.add(deck.getCards().get(1));
-        round.setPlayerCards(deckListApp);
-
-        round.getAppCards().add(deck.getCards().get(1));
 
         // 5.c
-        //  5.c. Actualizar el indice del mazo (Round.deckIndexPosition)
         round.setDeckIndexPosition(2);
 
         // 5.d
-        //  5.d. Calcular los valores de las cartas de cada jugador (Round.playerCardsValue y Round.appCardsValue)
         round.setPlayerCardsValue(getCardsValue(round.getPlayerCards()));
         round.setAppCardsValue(getCardsValue(round.getAppCards()));
 
         // 5.e
-        //  5.e. Calcular el estado de la mano de cada jugador (Round.roundHandStatusPlayer y Round.roundHandStatusApp)
-        round.setRoundHandStatusApp(RoundHandStatus.IN_GAME);
-        round.setRoundHandStatusPlayer(RoundHandStatus.IN_GAME);
 
         // 5.f
-        //  5.f. Asignar las fichas en juego (Round.chipsInPlay)
-        round.setChipsInPlay(CHIPS_PER_ROUND);
 
         // 5 -------FIN-------
         round = roundService.saveRound(round);
@@ -187,7 +151,7 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     public RoundResponseDTO playRoundMatch(Long matchId, Long roundId, RoundPlayDTO roundPlayDTO) {
-        // TO DO: Implementar el metodo de manera tal que haga las siguiestes acciones y validaciones:
+        // TODO: Implementar el metodo de manera tal que haga las siguiestes acciones y validaciones:
         //  1. Validar que el matchId exista en la DB, si no exite retornar una exepción del
         //  tipo EntityNotFoundException con el mensaje "The match id {matchId} not found"
         //  2. Validar que el roundId exista en la DB, si no exite retornar una exepción del
@@ -215,20 +179,11 @@ public class MatchServiceImpl implements MatchService {
 
         // 1
         Match match = this.getMatchById(matchId);
-        if (match.getId() == null){
-            throw new EntityNotFoundException("The match id {matchId} not found");
-        }
 
         // 2
         Round round = roundService.getRoundById(roundId);
 
-        if (round.getId() == null){
-            throw new EntityNotFoundException("The round id {roundId} not found");
-        }
         // 3
-        if (!Objects.equals(roundPlayDTO.getPlayerId(), match.getPlayer().getId())){
-            throw new IllegalArgumentException ("The match id {matchId} does not belong to player {playerId}");
-        }
 
         // 4
         if(!match.getRounds().contains(round)) {
@@ -237,19 +192,15 @@ public class MatchServiceImpl implements MatchService {
         }
 
         // 5
-        if (round.getWinner() != null && round.getRoundHandStatusPlayer()!= RoundHandStatus.IN_GAME){
-            throw new ResponseStatusException(HttpStatusCode.valueOf(404), "Round is end");
-        }
 
         // 6
         if(roundPlayDTO.getDecision().equals(RoundDecision.STOP)) {
             round.setRoundHandStatusPlayer(RoundHandStatus.STOPPED);
             playAppRound(round, match.getPlayer().getId());
-
         } else {
             playPlayerRound(round);
             if(round.getRoundHandStatusPlayer().equals(RoundHandStatus.EXCEEDED)) {
-                playAppRound(round, match.getPlayer().getId());;
+                playAppRound(round, match.getPlayer().getId());
             }
         }
         round = roundService.saveRound(round);
@@ -258,20 +209,10 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     public Optional<Match> getPlayingMatch(Long playerId) {
-        //TO DO: Implementar el metodo para que retorne, si existe, el match que esté en estado PLAYING.
+        //TODO: Implementar el metodo para que retorne, si existe, el match que esté en estado PLAYING.
         // Si existieran mas de uno, (Situación que no debiera ser posible) retornar el primero
 
-        Player player = playerService.getPlayerById(playerId);
-
-
-        Optional<List<MatchEntity>> matchOptionals = matchJpaRepository.getAllByPlayerIdAndMatchStatus(playerId,MatchStatus.PLAYING);
-        if (matchOptionals.isPresent()) {
-            MatchEntity matchEntity = matchOptionals.get().get(0);
-            Optional<Match> optionalMatch = Optional.of(modelMapper.map(matchEntity,Match.class));
-            return optionalMatch;
-        }
         return Optional.empty();
-
     }
 
     @Override
@@ -289,16 +230,15 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private void playAppRound(Round round, Long playerId) {
-        // TO DO: Completar el metodo para que ejecuite los pasos descriptos
+        // TODO: Completar el metodo para que ejecuite los pasos descriptos
         while(round.getRoundHandStatusApp().equals(RoundHandStatus.IN_GAME)) {
             // 1 - Tomar del round las cartas de la app y agregarle la siguiente carta del mazo -> Ayuda: deckService.takeCard
-            round.getAppCards().add(deckService.takeCard(round.getDeck(),round.getDeckIndexPosition()));
+
             // 2 - Actualizar el indice del mazo (deckIndexPosition)
-            round.setDeckIndexPosition(round.getDeckIndexPosition() + 1);
+
             // 3 - Calcular la sumarización de las cartas de la app -> Ayuda: getCardsValue
-            round.setAppCardsValue(getCardsValue(round.getAppCards()));
+
             // 4 - Calcular el estado del round para la app -> Ayuda: calculateAppHand
-            round.setRoundHandStatusApp(calculateRoundHand(round.getAppCardsValue()));
 
         }
         calculateWinner(round, playerId);
@@ -310,49 +250,27 @@ public class MatchServiceImpl implements MatchService {
                 round.setWinner(RoundWinner.APP);
             } else {
                 round.setWinner(RoundWinner.APP);
-                // TO DO: Descontar la apuesta del player del balance usando playerService.updatePlayerBalance
-                Player player =  playerService.getPlayerById(playerId);
-                BigDecimal apuesta = round.getChipsInPlay();
-                BigDecimal apuestaDescontada = apuesta.negate();
-                playerService.updatePlayerBalance(player.getId(), apuestaDescontada);
+                // TODO: Descontar la apuesta del player del balance usando playerService.updatePlayerBalance
             }
         } else {
             if(round.getRoundHandStatusApp().equals(RoundHandStatus.EXCEEDED)) {
                 round.setWinner(RoundWinner.PLAYER);
                 if(round.getPlayerCardsValue().compareTo(CARDS_LIMIT) == 0) {
-                    // TO DO: Sumar la apuesta del player * 2 al balance usando playerService.updatePlayerBalance
-                    Player player =  playerService.getPlayerById(playerId);
-                    BigDecimal apuesta = round.getChipsInPlay() ;
-                    BigDecimal apuestaPor2 = apuesta.multiply(new BigDecimal(2));
-                    playerService.updatePlayerBalance(player.getId(), apuestaPor2);
+                    // TODO: Sumar la apuesta del player * 2 al balance usando playerService.updatePlayerBalance
                 } else {
-                    // TO DO: Sumar la apuesta del player al balance usando playerService.updatePlayerBalance
-                    Player player =  playerService.getPlayerById(playerId);
-                    BigDecimal apuesta = round.getChipsInPlay() ;
-                    playerService.updatePlayerBalance(player.getId(), apuesta);
+                    // TODO: Sumar la apuesta del player al balance usando playerService.updatePlayerBalance
                 }
             } else {
                 if(round.getPlayerCardsValue().compareTo(round.getAppCardsValue()) > 0) {
                     round.setWinner(RoundWinner.PLAYER);
                     if(round.getPlayerCardsValue().compareTo(CARDS_LIMIT) == 0) {
-                        // TO DO: Sumar la apuesta del player * 2 al balance usando playerService.updatePlayerBalance
-                        Player player =  playerService.getPlayerById(playerId);
-                        BigDecimal apuesta = round.getChipsInPlay() ;
-                        BigDecimal apuestaPor2 = apuesta.multiply(new BigDecimal(2));
-                        playerService.updatePlayerBalance(player.getId(), apuestaPor2);
+                        // TODO: Sumar la apuesta del player * 2 al balance usando playerService.updatePlayerBalance
                     } else {
-                        // TO DO: Sumar la apuesta del player al balance usando playerService.updatePlayerBalance
-                        Player player =  playerService.getPlayerById(playerId);
-                        BigDecimal apuesta = round.getChipsInPlay() ;
-                        playerService.updatePlayerBalance(player.getId(), apuesta);
+                        // TODO: Sumar la apuesta del player al balance usando playerService.updatePlayerBalance
                     }
                 } else {
                     round.setWinner(RoundWinner.APP);
-                    // TO DO: Descontar la apuesta del player del balance usando playerService.updatePlayerBalance
-                    Player player =  playerService.getPlayerById(playerId);
-                    BigDecimal apuesta = round.getChipsInPlay();
-                    BigDecimal apuestaDescontada = apuesta.negate();
-                    playerService.updatePlayerBalance(player.getId(), apuestaDescontada);
+                    // TODO: Descontar la apuesta del player del balance usando playerService.updatePlayerBalance
                 }
             }
         }
@@ -366,69 +284,37 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private Match createMatch(Player player) {
-        // TO DO: Crear un match con los siguientes datos:
+        // TODO: Crear un match con los siguientes datos:
         //  - El player recibido por parametro
         //  - El Match debe tener el estado PLAYING
         //  - Guardar el Match y retornar la respuesta mapeada a Match
 
-        Match match = new Match();
-        match.setPlayer(player);
-        match.setMatchStatus(MatchStatus.PLAYING);
-        MatchEntity matchSaved =  matchJpaRepository.saveAndFlush(modelMapper.map(match,MatchEntity.class));
-        return modelMapper.map(matchSaved,Match.class);
+        return null;
     }
 
     private Optional<Round> hasUnfinishedRound(Match match) {
-        // TO DO: Implementar el metódo de manera tal que si hay un round sin terminar (winner == null),
+        // TODO: Implementar el metódo de manera tal que si hay un round sin terminar (winner == null),
         //  lo retorne en un Optional, sino, el Optional se retorna vacio.
-
-        for (Round round :
-                match.getRounds()) {
-            if (round.getWinner() == null){
-               return Optional.of(round);
-            }
-        }
 
         return Optional.empty();
     }
 
     private BigDecimal getCardsValue(List<Card> cardsToSummarize) {
-        // TO DO: Sumar los valores de todas las cartas recibidas por parametro y retornar el valor de la sumarización
+        // TODO: Sumar los valores de todas las cartas recibidas por parametro y retornar el valor de la sumarización
 
-        BigDecimal resultado = new BigDecimal(0);
-
-        for (Card card: cardsToSummarize) {
-            resultado = resultado.add(card.getValue());
-        }
-        return  resultado;
+        return null;
     }
 
     private RoundHandStatus calculateRoundHand(BigDecimal cardsValue) {
-        // TO DO: Retornar RoundHandStatus.EXCEEDED si excede de 7.5, de lo contrario retornar RoundHandStatus.IN_GAME
+        // TODO: Retornar RoundHandStatus.EXCEEDED si excede de 7.5, de lo contrario retornar RoundHandStatus.IN_GAME
 
-        int resultado = cardsValue.compareTo(CARDS_LIMIT);
-
-        if (resultado > 0){
-            return RoundHandStatus.EXCEEDED;
-        } else  {
-            return RoundHandStatus.IN_GAME;
-        }
-
+        return null;
     }
 
     private RoundHandStatus calculateAppHand(BigDecimal cardsValue) {
-        // TO DO: Retornar RoundHandStatus.EXCEEDED si excede de 7.5 o RoundHandStatus.STOPPED si excede 5
+        // TODO: Retornar RoundHandStatus.EXCEEDED si excede de 7.5 o RoundHandStatus.STOPPED si excede 5
         //  de lo contrario retornar RoundHandStatus.IN_GAME
 
-        int resultadoExede7 = cardsValue.compareTo(CARDS_LIMIT);
-        int resultadoExede5 = cardsValue.compareTo(APP_THRESHOLD);
-
-        if (resultadoExede7 > 0){
-            return RoundHandStatus.EXCEEDED;
-        } else  if (resultadoExede5 > 0){
-            return RoundHandStatus.STOPPED;
-        } else {
-            return RoundHandStatus.IN_GAME;
-        }
+        return null;
     }
 }
