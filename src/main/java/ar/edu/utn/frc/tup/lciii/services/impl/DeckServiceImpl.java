@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 
 @Service
 public class DeckServiceImpl implements DeckService {
@@ -31,12 +32,14 @@ public class DeckServiceImpl implements DeckService {
 
     @Override
     public void shuffleDeck(Deck deck) {
-        //TODO: Tomar el mazo (deck) que viene como parametro y mesclar las cartas
+        //TO DO: Tomar el mazo (deck) que viene como parametro y mesclar las cartas
+        Collections.shuffle(deck.getCards());
     }
 
     @Override
     public Card takeCard(Deck deck, Integer deckIndex) {
-        //TODO: Tomar del mazo (deck) que viene como parametro la carta de la posición indicada en el parametro deckIndex
-        return null;
+        //TO DO: Tomar del mazo (deck) que viene como parametro la carta de la posición indicada en el parametro deckIndex
+
+        return deck.getCards().get(deckIndex);
     }
 }
