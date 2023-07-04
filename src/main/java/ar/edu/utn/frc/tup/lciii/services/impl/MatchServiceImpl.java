@@ -71,8 +71,7 @@ public class MatchServiceImpl implements MatchService {
         Player player = playerService.getPlayerById(newMatchRequestDTO.getPlayerId());
         Optional<Match> optionalMatch = this.getPlayingMatch(player.getId());
         if(optionalMatch.isEmpty()) {
-            MatchResponseDTO matchResponseDTO = modelMapper.map(this.createMatch(player), MatchResponseDTO.class);
-            return matchResponseDTO;
+            return modelMapper.map(this.createMatch(player), MatchResponseDTO.class);
         } else {
             return modelMapper.map(optionalMatch.get(), MatchResponseDTO.class);
         }
@@ -95,7 +94,7 @@ public class MatchServiceImpl implements MatchService {
         if(me != null) {
             return modelMapper.map(me, MatchResponseDTO.class);
         }else {
-            throw new EntityNotFoundException(String.format("The match id %s not found", id));
+            throw new EntityNotFoundException(String.format("The match id is not found", id));
         }
     }
 
@@ -157,6 +156,10 @@ public class MatchServiceImpl implements MatchService {
 
         // 5.b
         //  5.b. Asignar la primera carta al jugador y la segunda a la app
+        List<Card> cardListPlayer = new ArrayList<>();
+        round.setPlayerCards(cardListPlayer);
+        List<Card> cardListApp = new ArrayList<>();
+        round.setAppCards(cardListApp);
         round.getPlayerCards().add(deckService.takeCard(deck,0));
         round.getAppCards().add(deckService.takeCard(deck,1));
 
@@ -263,10 +266,17 @@ public class MatchServiceImpl implements MatchService {
         // Si existieran mas de uno, (Situación que no debiera ser posible) retornar el primero
         Optional<List<MatchEntity>> optionalMatchEntityList= matchJpaRepository.getAllByPlayerIdAndMatchStatus(playerId,MatchStatus.PLAYING);
 
-        if (optionalMatchEntityList.isPresent()){
-            return Optional.of(modelMapper.map(optionalMatchEntityList.get().get(0),Match.class));
-        }
-        return Optional.empty();
+        return optionalMatchEntityList.flatMap(matchEntities -> {
+            if (matchEntities.isEmpty()){
+                return Optional.empty();
+            } else {
+                MatchEntity firstMatchEntity = matchEntities.get(0);
+                Match match = modelMapper.map(firstMatchEntity,Match.class);
+                return  Optional.of(match);
+            }
+        });
+
+
     }
 
     @Override
